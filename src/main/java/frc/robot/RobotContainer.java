@@ -1,0 +1,509 @@
+// Copyright (c) FIRST and other WPILib contributors.
+// Open Source Software; you can modify and/or share it under the terms of
+// the WPILib BSD license file in the root directory of this project.
+
+package frc.robot;
+
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.constants.DriveConstants;
+import frc.robot.constants.HardwareConstants;
+import frc.robot.constants.VisionConstants;
+import frc.robot.commands.DriveCommands;
+import frc.robot.subsystems.DriveSubsystem;
+import frc.robot.subsystems.NoVisionProvider;
+import frc.robot.subsystems.VisionProvider;
+import frc.robot.subsystems.VisionSubsystem;
+
+import com.pathplanner.lib.commands.PathPlannerAuto;
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ *                           ROBOT CONTAINER
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Purpose: Configures robot subsystems, controllers, and button mappings.
+ *
+ * ⚠️ WHAT TO UPDATE EACH YEAR:
+ *   - Game-specific subsystems (shooter, intake, climber, etc.)
+ *   - Button mappings for game-specific commands
+ *   - Auto routines in createAuto()
+ *   - Field layout in loadFieldLayout()
+ *
+ * 🧪 VISION TESTING: See VISION_TESTING_GUIDE.md for complete testing procedures.
+ *
+ * Controller Ports:
+ *   - 0: Driver left joystick (Thrustmaster)
+ *   - 1: Driver right joystick (Thrustmaster)
+ *   - 2: Co-driver controller (PlayStation)
+ *
+ * Related files:
+ *   - DriveSubsystem: Year-to-year reusable drive
+ *   - VisionSubsystem: Year-to-year reusable vision
+ *   - DriveCommands: Command factories for driving
+ */
+public class RobotContainer {
+
+  // =========================================================================
+  // SUBSYSTEMS (Year-to-year reusable)
+  // =========================================================================
+
+  /** Vision provider - Automatically falls back to NoVisionProvider if cameras unavailable */
+  private final VisionProvider m_vision = createVisionProvider();
+
+  /** Drive subsystem - Controls swerve drivetrain and tracks robot position */
+  private final DriveSubsystem m_robotDrive = new DriveSubsystem(m_vision);
+
+  // =========================================================================
+  // CONTROLLERS
+  // =========================================================================
+
+  /** Driver left joystick (Thrustmaster) - Translation control (forward/back, left/right) */
+  private final Joystick driverLeftStick = new Joystick(HardwareConstants.kDriverLeftJoystickPort);
+
+  /** Driver right joystick (Thrustmaster) - Rotation control */
+  private final Joystick driverRightStick = new Joystick(HardwareConstants.kDriverRightJoystickPort);
+
+  /** Co-driver PlayStation controller - Vision testing and utility commands */
+  private final CommandPS5Controller coDriver = new CommandPS5Controller(HardwareConstants.kCoDriverControllerPort);
+
+  // =========================================================================
+  // TEST TARGET CONFIGURATION
+  // =========================================================================
+
+  /**
+   * Test target position for vision command testing.
+   *
+   * Update via dashboard (Test/TargetX, Test/TargetY, Test/TargetHeading), then press START button.
+   * See VISION_TESTING_GUIDE.md for setup instructions.
+   */
+  private Pose2d testTarget = new Pose2d(
+    DriveConstants.kDefaultTestTargetX,
+    DriveConstants.kDefaultTestTargetY,
+    Rotation2d.fromDegrees(DriveConstants.kDefaultTestTargetHeadingDegrees)
+  );
+
+  // =========================================================================
+  // AUTONOMOUS SELECTOR
+  // =========================================================================
+
+  /** Auto routine selector - Displayed on dashboard */
+  private SendableChooser<Command> auto = new SendableChooser<>();
+
+  // =========================================================================
+  // CONSTRUCTOR
+  // =========================================================================
+
+  /**
+   * Creates robot container and configures subsystems, controllers, and bindings.
+   */
+  public RobotContainer() {
+    // Start camera server for dashboard video feed
+    CameraServer.startAutomaticCapture();
+
+    // ═════════════════════════════════════════════════════════════════════
+    // REGISTER PATHPLANNER NAMED COMMANDS
+    // ═════════════════════════════════════════════════════════════════════
+    // Must be done BEFORE creating autonomous selector
+    registerNamedCommands();
+
+    // ═════════════════════════════════════════════════════════════════════
+    // SET DEFAULT DRIVE COMMAND
+    // ═════════════════════════════════════════════════════════════════════
+    // This runs continuously during teleop when no other command is using the drive subsystem
+    // Left stick = translation (X/Y), Right stick X-axis = rotation
+    m_robotDrive.setDefaultCommand(
+      DriveCommands.joystickDrive(
+        m_robotDrive,
+        () -> -driverLeftStick.getY(),   // Forward/backward (negated for intuitive control)
+        () -> -driverLeftStick.getX(),   // Left/right (negated for intuitive control)
+        () -> -driverRightStick.getX()   // Rotation (negated for intuitive control)
+      )
+    );
+
+    // Configure button bindings
+    configureButtonBindings();
+
+    // Create autonomous selector
+    createAuto();
+
+    // ═════════════════════════════════════════════════════════════════════
+    // PUBLISH TEST TARGET TO DASHBOARD
+    // ═════════════════════════════════════════════════════════════════════
+    // Update these values on dashboard before testing!
+    SmartDashboard.putNumber("Test/TargetX", testTarget.getX());
+    SmartDashboard.putNumber("Test/TargetY", testTarget.getY());
+    SmartDashboard.putNumber("Test/TargetHeading", testTarget.getRotation().getDegrees());
+    SmartDashboard.putNumber("Test/DistanceFromTag", DriveConstants.kDefaultDistanceFromTag);
+  }
+
+  // =========================================================================
+  // BUTTON BINDINGS
+  // =========================================================================
+
+  /**
+   * Configures button->command mappings.
+   *
+   * 🧪 VISION TESTING: See VISION_TESTING_GUIDE.md for complete button reference and testing procedures.
+   *
+   * Driver Controls (Thrustmaster): Joystick driving + field-relative toggle + emergency override
+   * Co-Driver Controls (PlayStation): Vision testing (Y/A/X), utilities (B/LB/RB), speed (D-Pad)
+   *
+   * ⚠️ Safety: Vision commands are autonomous (whileTrue). Driver button 3 = emergency override.
+   */
+  private void configureButtonBindings() {
+    // ═════════════════════════════════════════════════════════════════════
+    // DRIVER CONTROLS (Thrustmaster Joysticks)
+    // ═════════════════════════════════════════════════════════════════════
+
+    // Right stick button 1: Toggle speed (full/half)
+    new JoystickButton(driverRightStick, 1)
+        .onTrue(DriveCommands.toggleSpeed(m_robotDrive));
+
+    // Right stick button 2: Zero heading (⚠️ face AWAY from driver station first!)
+    new JoystickButton(driverRightStick, 2)
+        .onTrue(DriveCommands.zeroHeading(m_robotDrive));
+
+    // Right stick button 3: 🚨 Emergency override (cancels any running command)
+    new JoystickButton(driverRightStick, 3)
+        .onTrue(new Command() {
+          {
+            setName("EmergencyOverride");
+            addRequirements(m_robotDrive);
+          }
+
+          @Override
+          public void initialize() {
+            System.out.println("🚨 EMERGENCY OVERRIDE - Driver has control");
+          }
+
+          @Override
+          public boolean isFinished() {
+            return true;
+          }
+        });
+
+    // Left stick button 1: Toggle field-relative driving
+    new JoystickButton(driverLeftStick, 1)
+        .onTrue(DriveCommands.toggleFieldRelative(m_robotDrive));
+
+    // ═════════════════════════════════════════════════════════════════════
+    // CO-DRIVER VISION TESTING (PlayStation Controller)
+    // ═════════════════════════════════════════════════════════════════════
+
+    // Triangle button: Heading lock (driver controls translation, robot auto-rotates)
+    coDriver.triangle()
+        .whileTrue(Commands.deferredProxy(() ->
+            DriveCommands.driveWithHeadingLock(
+                m_robotDrive,
+                () -> -driverLeftStick.getY(),
+                () -> -driverLeftStick.getX(),
+                getTestTarget(),
+                0.0  // Aim with front of robot (0 degrees)
+            )));
+
+    // Circle button: Auto-aim (rotate to face test target)
+    coDriver.circle()
+        .whileTrue(Commands.deferredProxy(() ->
+            DriveCommands.autoAimAtTarget(m_robotDrive, getTestTarget())));
+
+    // Square button: X-stance (makes an X pattern with wheels)
+    coDriver.square()
+        .whileTrue(DriveCommands.xStance(m_robotDrive));
+
+    // Cross button: Drive to distance from test target
+    coDriver.cross()
+        .whileTrue(Commands.deferredProxy(() ->
+            DriveCommands.positionAtDistance(
+                m_robotDrive,
+                getTestTarget(),
+                SmartDashboard.getNumber("Test/DistanceFromTag", DriveConstants.kDefaultDistanceFromTag)
+            )));
+
+    // ═════════════════════════════════════════════════════════════════════
+    // CO-DRIVER DRIVE UTILITIES
+    // ═════════════════════════════════════════════════════════════════════
+
+    // L1 button: Snap to cardinal angle (0/90/180/270°)
+    coDriver.L1()
+        .whileTrue(DriveCommands.snapToClosestCardinal(
+            m_robotDrive,
+            () -> -driverLeftStick.getY(),
+            () -> -driverLeftStick.getX()
+        ));
+
+    // R1 button: Snap to diamond angle (45/135/225/315°)
+    coDriver.R1()
+        .whileTrue(DriveCommands.snapToDiamond(
+            m_robotDrive,
+            () -> -driverLeftStick.getY(),
+            () -> -driverLeftStick.getX()
+        ));
+
+    // Create button: Force vision reset (snap odometry to AprilTag)
+    coDriver.create()
+        .onTrue(DriveCommands.forceVisionReset(m_robotDrive));
+
+    // Options button: Reload test target from dashboard
+    coDriver.options()
+        .onTrue(new Command() {
+          {
+            setName("UpdateTestTarget");
+          }
+
+          @Override
+          public void initialize() {
+            double x = SmartDashboard.getNumber("Test/TargetX", DriveConstants.kDefaultTestTargetX);
+            double y = SmartDashboard.getNumber("Test/TargetY", DriveConstants.kDefaultTestTargetY);
+            double heading = SmartDashboard.getNumber("Test/TargetHeading", DriveConstants.kDefaultTestTargetHeadingDegrees);
+            testTarget = new Pose2d(x, y, Rotation2d.fromDegrees(heading));
+            System.out.println("✅ Test target updated: (" + x + ", " + y + ", " + heading + "°)");
+          }
+
+          @Override
+          public boolean isFinished() {
+            return true;
+          }
+        }.ignoringDisable(true));
+
+    // ═════════════════════════════════════════════════════════════════════
+    // CO-DRIVER SPEED CONTROL (D-Pad)
+    // ═════════════════════════════════════════════════════════════════════
+
+    coDriver.povUp().onTrue(DriveCommands.setSpeed(m_robotDrive, DriveConstants.kFullSpeedMultiplier));
+    coDriver.povRight().onTrue(DriveCommands.setSpeed(m_robotDrive, DriveConstants.kThreeQuarterSpeedMultiplier));
+    coDriver.povDown().onTrue(DriveCommands.setSpeed(m_robotDrive, DriveConstants.kHalfSpeedMultiplier));
+    coDriver.povLeft().onTrue(DriveCommands.setSpeed(m_robotDrive, DriveConstants.kQuarterSpeedMultiplier));
+  }
+
+  /**
+   * Gets current test target position.
+   *
+   * @return Test target pose
+   */
+  private Pose2d getTestTarget() {
+    return testTarget;
+  }
+
+  // =========================================================================
+  // AUTONOMOUS CONFIGURATION
+  // =========================================================================
+
+  /**
+   * Creates autonomous selector.
+   *
+   * <p><b>⚠️ UPDATE EACH YEAR:</b> Add PathPlanner autos created for current game.
+   *
+   * <p><b>🧪 TEST AUTOS INCLUDED:</b>
+   * <ul>
+   *   <li><b>Test: Drive Forward:</b> Simple 2m straight line (verify basic movement)
+   *   <li><b>Test: L-Shape:</b> Drive 2m, turn 90°, drive 1m (verify turning)
+   * </ul>
+   *
+   * <p><b>How to create these paths in PathPlanner:</b>
+   * <ol>
+   *   <li>Install PathPlanner: https://pathplanner.dev/home.html
+   *   <li>Open PathPlanner, select "2025 Reefscape" field
+   *   <li>Create "Test Drive Forward": Start (1, 4), End (3, 4), straight line
+   *   <li>Create "Test L-Shape": Start (1, 4), waypoint (3, 4), End (3, 6), 90° turn
+   *   <li>Set constraints: Max Vel 2.0 m/s, Max Accel 1.5 m/s² (SAFE for testing!)
+   *   <li>Save to deploy/pathplanner/autos/ folder
+   * </ol>
+   */
+  public void createAuto() {
+    auto = new SendableChooser<>();
+    auto.setDefaultOption("None", null);
+
+    // ═════════════════════════════════════════════════════════════════════
+    // 🧪 TEST AUTOS - Safe, simple paths for verifying PathPlanner works
+    // ═════════════════════════════════════════════════════════════════════
+
+    try {
+      // Test Auto 1: Simple straight line (2 meters forward)
+      // Purpose: Verify basic path following, encoders, and gyro
+      auto.addOption("🧪 Test: Drive Forward", new PathPlannerAuto("Test Drive Forward"));
+
+      // Test Auto 2: L-shape path (forward 2m, turn 90°, forward 1m)
+      // Purpose: Verify turning, rotation PID, and path transitions
+      auto.addOption("🧪 Test: L-Shape", new PathPlannerAuto("Test L-Shape"));
+
+      System.out.println("✅ Test autos loaded successfully");
+    } catch (Exception e) {
+      System.out.println("⚠️ Test autos not found - create them in PathPlanner first!");
+      System.out.println("   See createAuto() comments for instructions");
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // 🏆 GAME AUTOS - Add your competition autonomous routines here
+    // ═════════════════════════════════════════════════════════════════════
+
+    // Example for 2025 Reefscape (update each year):
+    // auto.addOption("4 Piece Auto", new PathPlannerAuto("4 Piece Auto"));
+    // auto.addOption("2 Piece Auto", new PathPlannerAuto("2 Piece Auto"));
+    // auto.addOption("Leave Only", new PathPlannerAuto("Leave Only"));
+
+    SmartDashboard.putData("Autonomous Command", auto);
+  }
+
+  /**
+   * Gets selected autonomous command (called by Robot.java).
+   *
+   * @return Selected auto command or null
+   */
+  public Command getAutonomousCommand() {
+    return auto.getSelected();
+  }
+
+  /**
+   * Gets drive subsystem instance.
+   *
+   * @return Drive subsystem
+   */
+  public DriveSubsystem getDriveSubsystem() {
+    return m_robotDrive;
+  }
+
+
+  // =========================================================================
+  // VISION INITIALIZATION
+  // =========================================================================
+
+  /**
+   * Creates vision provider with automatic fallback if vision unavailable.
+   *
+   * @return VisionSubsystem or NoVisionProvider (fallback)
+   */
+  private static VisionProvider createVisionProvider() {
+    try {
+      // Step 1: Load field layout for current game
+      AprilTagFieldLayout fieldLayout = loadFieldLayout();
+
+      if (fieldLayout == null) {
+        DriverStation.reportWarning(
+          "Field layout not loaded - using NoVisionProvider",
+          false
+        );
+        return new NoVisionProvider();
+      }
+
+      // Step 2: Create camera configuration
+      Transform3d cameraTransform = createCameraTransform();
+
+      // Step 3: Create VisionSubsystem with camera
+      return new VisionSubsystem(
+        fieldLayout,
+        new VisionSubsystem.CameraConfig(VisionConstants.kCameraName, cameraTransform)
+      );
+
+    } catch (Exception e) {
+      DriverStation.reportError(
+        "Failed to initialize vision: " + e.getMessage(),
+        false
+      );
+      return new NoVisionProvider();
+    }
+  }
+
+  /**
+   * Loads AprilTag field layout for current game.
+   *
+   * <p><b>⚠️ UPDATE EACH YEAR:</b> Change {@code k2025Reefscape} to new game year.
+   *
+   * @return Field layout or null if unavailable
+   */
+  private static AprilTagFieldLayout loadFieldLayout() {
+    try {
+      return AprilTagFieldLayout.loadField(AprilTagFields.k2025Reefscape);
+      // For future years: AprilTagFieldLayout.loadField(AprilTagFields.k2026GameName);
+    } catch (Exception e) {
+      DriverStation.reportWarning(
+        "Could not load AprilTag field layout: " + e.getMessage() +
+        " - Vision will be disabled",
+        false
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Creates camera-to-robot transform from VisionConstants.
+   *
+   * <p><b>⚠️ UPDATE VisionConstants EACH YEAR</b> with measured camera position/orientation.
+   *
+   * @return Transform3d from robot center to camera
+   */
+  private static Transform3d createCameraTransform() {
+    return new Transform3d(
+      new Translation3d(
+        VisionConstants.kCameraToRobotX,
+        VisionConstants.kCameraToRobotY,
+        VisionConstants.kCameraToRobotZ
+      ),
+      new Rotation3d(
+        VisionConstants.kCameraRollRadians,
+        VisionConstants.kCameraPitchRadians,
+        VisionConstants.kCameraYawRadians
+      )
+    );
+  }
+
+  // =========================================================================
+  // PATHPLANNER NAMED COMMANDS
+  // =========================================================================
+
+  /**
+   * Registers named commands for use in PathPlanner autonomous routines.
+   *
+   * <p><b>What are named commands?</b> Custom actions that can be inserted into
+   * autonomous paths (e.g., run intake, shoot, deploy mechanism).
+   *
+   * <p><b>How to use:</b>
+   * <ol>
+   *   <li>Register command here with a name
+   *   <li>In PathPlanner GUI, add "Named Command" marker to path
+   *   <li>Select registered command name
+   *   <li>Command runs when robot reaches that point in path
+   * </ol>
+   *
+   * <p><b>⚠️ UPDATE EACH YEAR:</b> Add game-specific commands here!
+   */
+  private void registerNamedCommands() {
+    // Import required for PathPlanner named commands
+    com.pathplanner.lib.auto.NamedCommands.registerCommand(
+      "Print Start",
+      Commands.runOnce(() -> System.out.println("🚀 Auto started!"))
+    );
+
+    com.pathplanner.lib.auto.NamedCommands.registerCommand(
+      "Print End",
+      Commands.runOnce(() -> System.out.println("✅ Auto complete!"))
+    );
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 🏆 GAME-SPECIFIC NAMED COMMANDS
+    // ═══════════════════════════════════════════════════════════════════════
+    // Add your game-specific commands here for use in autonomous:
+    //
+    // Example for 2025 Reefscape:
+    // NamedCommands.registerCommand("Intake Algae", intakeSubsystem.runIntake());
+    // NamedCommands.registerCommand("Score Coral", shooterSubsystem.shoot());
+    // NamedCommands.registerCommand("Deploy Climber", climberSubsystem.deploy());
+  }
+}
+
