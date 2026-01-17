@@ -17,6 +17,8 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
@@ -142,6 +144,9 @@ public class RobotContainer {
 
     // Create autonomous selector
     createAuto();
+
+    // Configure Shuffleboard dashboard
+    configureShuffleboard();
 
     // ═════════════════════════════════════════════════════════════════════
     // PUBLISH TEST TARGET TO DASHBOARD
@@ -358,7 +363,7 @@ public class RobotContainer {
     // auto.addOption("2 Piece Auto", new PathPlannerAuto("2 Piece Auto"));
     // auto.addOption("Leave Only", new PathPlannerAuto("Leave Only"));
 
-    SmartDashboard.putData("Autonomous Command", auto);
+    // Auto selector will be added to Shuffleboard in configureShuffleboard()
   }
 
   /**
@@ -379,6 +384,190 @@ public class RobotContainer {
     return m_robotDrive;
   }
 
+  // =========================================================================
+  // SHUFFLEBOARD CONFIGURATION
+  // =========================================================================
+
+  /**
+   * Configures Shuffleboard dashboard with telemetry and command buttons.
+   *
+   * <p>Organized into tabs:
+   * - Competition: Minimal display for drivers during matches
+   * - Drive: Robot pose, speeds, field-relative mode
+   * - Vision: Camera status, AprilTag detection, pose drift
+   * - Tuning: Live PID tuning for practice/testing
+   * - Commands: Useful buttons for testing and troubleshooting
+   *
+   * <p><b>📊 Telemetry Note:</b> Most telemetry uses SmartDashboard.put*() which
+   * automatically appears in Shuffleboard. This method organizes the layout.
+   */
+  private void configureShuffleboard() {
+    // ═════════════════════════════════════════════════════════════════════
+    // DRIVE TAB - Main telemetry for monitoring robot state
+    // ═════════════════════════════════════════════════════════════════════
+    ShuffleboardTab driveTab = Shuffleboard.getTab("Drive");
+
+    // Pose and heading
+    driveTab.addNumber("Robot X (m)", () -> m_robotDrive.getCurrentPose().getX())
+        .withPosition(0, 0).withSize(2, 1);
+    driveTab.addNumber("Robot Y (m)", () -> m_robotDrive.getCurrentPose().getY())
+        .withPosition(2, 0).withSize(2, 1);
+    driveTab.addNumber("Heading (deg)", () -> m_robotDrive.getCurrentPose().getRotation().getDegrees())
+        .withPosition(4, 0).withSize(2, 1);
+
+    // Drive status
+    driveTab.addBoolean("Field Relative", () -> m_robotDrive.getFieldRelative())
+        .withPosition(0, 1).withSize(2, 1);
+    driveTab.addNumber("Speed %", () -> m_robotDrive.getSpeedMultiplier() * 100)
+        .withPosition(2, 1).withSize(2, 1);
+    driveTab.addNumber("Battery (V)", () -> edu.wpi.first.wpilibj.RobotController.getBatteryVoltage())
+        .withPosition(4, 1).withSize(2, 1);
+
+    // Gyro
+    driveTab.addNumber("Gyro Rate (deg/s)", () -> m_robotDrive.getGyroRate())
+        .withPosition(0, 2).withSize(3, 1);
+
+    // Field widget for pose visualization
+    driveTab.add("Field", m_robotDrive.getField())
+        .withPosition(6, 0).withSize(4, 3);
+
+    // ═════════════════════════════════════════════════════════════════════
+    // VISION TAB - Camera and AprilTag detection status
+    // ═════════════════════════════════════════════════════════════════════
+    ShuffleboardTab visionTab = Shuffleboard.getTab("Vision");
+
+    // Vision system status (these are already published by VisionSubsystem)
+    // Just add helpful text indicators
+    visionTab.addBoolean("Vision Enabled", () -> SmartDashboard.getBoolean("Vision/Enabled", true))
+        .withPosition(0, 0).withSize(2, 1);
+
+    visionTab.addString("Vision Status", () -> {
+      boolean enabled = SmartDashboard.getBoolean("Vision/Enabled", true);
+      if (!enabled) return "❌ DISABLED";
+
+      // Check camera connection (photonvision is typical camera name)
+      boolean connected = SmartDashboard.getBoolean("Vision/photonvision/Connected", false);
+      int targets = (int) SmartDashboard.getNumber("Vision/photonvision/TargetCount", 0);
+
+      if (!connected) return "⚠️ CAMERA OFFLINE";
+      if (targets > 0) return "✅ TRACKING " + targets + " TAG(S)";
+      return "🔍 NO TARGETS";
+    }).withPosition(2, 0).withSize(3, 1);
+
+    visionTab.addNumber("Camera Latency (ms)", () ->
+        SmartDashboard.getNumber("Vision/photonvision/LatencyMs", 0))
+        .withPosition(5, 0).withSize(2, 1);
+
+    // ═════════════════════════════════════════════════════════════════════
+    // COMMANDS TAB - Useful buttons for testing/troubleshooting
+    // ═════════════════════════════════════════════════════════════════════
+    ShuffleboardTab commandsTab = Shuffleboard.getTab("Commands");
+
+    // Vision commands
+    commandsTab.add("🔄 Force Vision Reset", DriveCommands.forceVisionReset(m_robotDrive))
+        .withPosition(0, 0).withSize(2, 1);
+
+    // Heading commands
+    commandsTab.add("🧭 Zero Heading", DriveCommands.zeroHeading(m_robotDrive))
+        .withPosition(0, 1).withSize(2, 1);
+
+    // Field-relative toggle
+    commandsTab.add("🌍 Toggle Field-Relative", DriveCommands.toggleFieldRelative(m_robotDrive))
+        .withPosition(0, 2).withSize(2, 1);
+
+    // Speed presets
+    commandsTab.add("🐇 Full Speed (100%)", DriveCommands.fullSpeed(m_robotDrive))
+        .withPosition(2, 0).withSize(2, 1);
+    commandsTab.add("🏃 Half Speed (50%)", DriveCommands.halfSpeed(m_robotDrive))
+        .withPosition(2, 1).withSize(2, 1);
+    commandsTab.add("🐢 Quarter Speed (25%)", DriveCommands.quarterSpeed(m_robotDrive))
+        .withPosition(2, 2).withSize(2, 1);
+
+    // Utility commands - Wheel positioning
+    commandsTab.add("❌ X-Stance", DriveCommands.xStance(m_robotDrive))
+        .withPosition(4, 0).withSize(2, 1);
+    commandsTab.add("↑ Straight Ahead", DriveCommands.setStraightAhead(m_robotDrive))
+        .withPosition(6, 0).withSize(2, 1);
+
+    // Utility commands - Motor modes (for pit crew)
+    commandsTab.add("⚙️ Coast Mode", DriveCommands.setCoastMode(m_robotDrive))
+        .withPosition(4, 1).withSize(2, 1);
+    commandsTab.add("🔒 Brake Mode", DriveCommands.setBrakeMode(m_robotDrive))
+        .withPosition(6, 1).withSize(2, 1);
+
+    // ═════════════════════════════════════════════════════════════════════
+    // TUNING TAB - Live PID tuning for practice and testing
+    // ═════════════════════════════════════════════════════════════════════
+    ShuffleboardTab tuningTab = Shuffleboard.getTab("Tuning");
+
+    // Heading Lock PID (for tuning during practice)
+    // These values can be modified live and are read by driveWithHeadingLockTunable()
+    tuningTab.addNumber("Heading Lock kP", () -> SmartDashboard.getNumber("HeadingLock/kP", DriveConstants.kHeadingLockP))
+        .withPosition(0, 0).withSize(2, 1);
+    tuningTab.addNumber("Heading Lock kI", () -> SmartDashboard.getNumber("HeadingLock/kI", DriveConstants.kHeadingLockI))
+        .withPosition(0, 1).withSize(2, 1);
+    tuningTab.addNumber("Heading Lock kD", () -> SmartDashboard.getNumber("HeadingLock/kD", DriveConstants.kHeadingLockD))
+        .withPosition(0, 2).withSize(2, 1);
+    tuningTab.addNumber("Heading Lock Error (deg)", () -> SmartDashboard.getNumber("HeadingLock/ErrorDeg", 0))
+        .withPosition(0, 3).withSize(2, 1);
+    tuningTab.addNumber("Heading Lock Rot Speed", () -> SmartDashboard.getNumber("HeadingLock/RotSpeed", 0))
+        .withPosition(0, 4).withSize(2, 1);
+
+    // Drive telemetry for tuning
+    tuningTab.addNumber("Pose Drift (m)", () -> SmartDashboard.getNumber("Drive/PoseDrift", 0))
+        .withPosition(2, 0).withSize(2, 1);
+    tuningTab.addString("Vision Status", () -> SmartDashboard.getString("Vision/Status", "No Data"))
+        .withPosition(2, 1).withSize(2, 2);
+
+    // Module velocities for debugging
+    tuningTab.addNumber("FL Velocity (m/s)", () -> SmartDashboard.getNumber("Drive/FL_Velocity", 0))
+        .withPosition(4, 0).withSize(2, 1);
+    tuningTab.addNumber("FR Velocity (m/s)", () -> SmartDashboard.getNumber("Drive/FR_Velocity", 0))
+        .withPosition(4, 1).withSize(2, 1);
+    tuningTab.addNumber("RL Velocity (m/s)", () -> SmartDashboard.getNumber("Drive/RL_Velocity", 0))
+        .withPosition(4, 2).withSize(2, 1);
+    tuningTab.addNumber("RR Velocity (m/s)", () -> SmartDashboard.getNumber("Drive/RR_Velocity", 0))
+        .withPosition(4, 3).withSize(2, 1);
+
+    // Field widgets for visual feedback during tuning
+    tuningTab.addString("Field: Fused", () -> "See Drive tab")
+        .withPosition(6, 0).withSize(2, 1);
+    tuningTab.addString("Field: Pure Odometry", () -> "See Drive tab")
+        .withPosition(6, 1).withSize(2, 1);
+
+    // ═════════════════════════════════════════════════════════════════════
+    // COMPETITION TAB - Minimal display for drivers during matches
+    // ═════════════════════════════════════════════════════════════════════
+    ShuffleboardTab compTab = Shuffleboard.getTab("Competition");
+
+    // Most critical info only
+    compTab.addNumber("Battery (V)", () -> edu.wpi.first.wpilibj.RobotController.getBatteryVoltage())
+        .withPosition(0, 0).withSize(2, 2);
+
+    compTab.addBoolean("Field Relative", () -> m_robotDrive.getFieldRelative())
+        .withPosition(2, 0).withSize(2, 1);
+
+    compTab.addNumber("Speed %", () -> m_robotDrive.getSpeedMultiplier() * 100)
+        .withPosition(2, 1).withSize(2, 1);
+
+    compTab.addString("Vision", () -> {
+      boolean enabled = SmartDashboard.getBoolean("Vision/Enabled", true);
+      if (!enabled) return "OFF";
+      boolean connected = SmartDashboard.getBoolean("Vision/photonvision/Connected", false);
+      int targets = (int) SmartDashboard.getNumber("Vision/photonvision/TargetCount", 0);
+      if (!connected) return "OFFLINE";
+      if (targets > 0) return "OK";
+      return "NO TAGS";
+    }).withPosition(4, 0).withSize(1, 2);
+
+    // Auto selector
+    compTab.add("Auto Mode", auto)
+        .withPosition(5, 0).withSize(2, 2);
+
+    // Compact field widget
+    compTab.add("Field", m_robotDrive.getField())
+        .withPosition(7, 0).withSize(3, 2);
+  }
 
   // =========================================================================
   // VISION INITIALIZATION

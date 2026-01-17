@@ -957,6 +957,24 @@ public class DriveSubsystem extends SubsystemBase {
         return m_fieldRelative;
     }
 
+    /**
+     * Gets the fused field widget for Shuffleboard visualization.
+     *
+     * @return Field2d object with fused pose (odometry + vision)
+     */
+    public Field2d getField() {
+        return m_fieldFused;
+    }
+
+    /**
+     * Gets the current gyro rotation rate for dashboard telemetry.
+     *
+     * @return Angular velocity in degrees per second
+     */
+    public double getGyroRate() {
+        return Math.toDegrees(m_gyro.getRate());
+    }
+
     // =========================================================================
     // UTILITY METHODS
     // =========================================================================
@@ -994,6 +1012,43 @@ public class DriveSubsystem extends SubsystemBase {
             new SwerveModuleState(0, edu.wpi.first.math.geometry.Rotation2d.fromDegrees(-DriveConstants.kXStanceAngleDegrees)),  // FR
             new SwerveModuleState(0, edu.wpi.first.math.geometry.Rotation2d.fromDegrees(-DriveConstants.kXStanceAngleDegrees)),  // RL
             new SwerveModuleState(0, edu.wpi.first.math.geometry.Rotation2d.fromDegrees(DriveConstants.kXStanceAngleDegrees))    // RR
+        });
+    }
+
+    /**
+     * Sets all swerve modules to point straight ahead (0 degrees).
+     *
+     * <p><b>Purpose:</b> Aligns wheels forward for pit crew inspection and pre-match setup.
+     *
+     * <p><b>Why this matters:</b>
+     * <ul>
+     *   <li>Easier for pit crew to push robot in straight line when disabled
+     *   <li>Visual confirmation that all modules are mechanically aligned correctly
+     *   <li>Standard pre-match preparation step
+     *   <li>Makes it obvious if any module has mechanical issues
+     * </ul>
+     *
+     * <p><b>When to use:</b>
+     * <ul>
+     *   <li>Before each match: Pit crew clicks button before queueing
+     *   <li>After maintenance: Verify all modules respond correctly
+     *   <li>During inspection: Show judges that modules work properly
+     * </ul>
+     *
+     * <p><b>Module angles:</b>
+     * <pre>
+     *  ↑  ↑     Front of robot
+     *  FL FR
+     *  RL RR
+     *  ↑  ↑
+     * </pre>
+     */
+    public void setStraightAhead() {
+        setModuleStates(new SwerveModuleState[] {
+            new SwerveModuleState(0, edu.wpi.first.math.geometry.Rotation2d.fromDegrees(0)),  // FL
+            new SwerveModuleState(0, edu.wpi.first.math.geometry.Rotation2d.fromDegrees(0)),  // FR
+            new SwerveModuleState(0, edu.wpi.first.math.geometry.Rotation2d.fromDegrees(0)),  // RL
+            new SwerveModuleState(0, edu.wpi.first.math.geometry.Rotation2d.fromDegrees(0))   // RR
         });
     }
 

@@ -409,6 +409,19 @@ public class DriveCommands {
         }, drive);
     }
 
+    /**
+     * Sets all wheels to point straight ahead (0 degrees).
+     * Useful for pit crew to align wheels before matches and during maintenance.
+     *
+     * @param drive The drive subsystem
+     * @return Command that sets wheels straight
+     */
+    public static Command setStraightAhead(DriveSubsystem drive) {
+        return Commands.runOnce(drive::setStraightAhead, drive)
+            .withName("SetStraightAhead")
+            .ignoringDisable(true);
+    }
+
     public static Command zeroHeading(DriveSubsystem drive) {
         return Commands.runOnce(drive::zeroHeading, drive).withName("ZeroHeading");
     }
@@ -527,5 +540,31 @@ public class DriveCommands {
             boolean success = drive.forceVisionReset();
             // Optional: Rumble controller if success
         }, drive).withName("ForceVisionReset");
+    }
+
+    /**
+     * Sets motors to coast mode (allows free rolling).
+     * Useful for pit crew to easily push robot when disabled.
+     *
+     * @param drive The drive subsystem
+     * @return Command that sets coast mode
+     */
+    public static Command setCoastMode(DriveSubsystem drive) {
+        return Commands.runOnce(() -> drive.setMotorBrake(false), drive)
+            .withName("SetCoastMode")
+            .ignoringDisable(true);
+    }
+
+    /**
+     * Sets motors to brake mode (resists movement).
+     * Normal driving mode - should be enabled during matches.
+     *
+     * @param drive The drive subsystem
+     * @return Command that sets brake mode
+     */
+    public static Command setBrakeMode(DriveSubsystem drive) {
+        return Commands.runOnce(() -> drive.setMotorBrake(true), drive)
+            .withName("SetBrakeMode")
+            .ignoringDisable(true);
     }
 }
