@@ -727,5 +727,5 @@ Before marking PID tuning as "done":
 **📚 [Back to Documentation Index](README.md)**
 
 **Last Updated:** 2026-01-16
-**Game:** 2025 Reefscape
+**Game:** [Current Season]
 **Team:** [Your Team Number]

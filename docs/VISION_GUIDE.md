@@ -66,12 +66,12 @@ This quickstart follows your complete testing workflow:
 - [ ] Camera connected to Raspberry Pi
 - [ ] 2x Thrustmaster joysticks (driver - ports 0 & 1)
 - [ ] 1x PlayStation 5 controller (co-driver - port 2)
-- [ ] 1-3 printed AprilTags (from 2025 Reefscape field)
+- [ ] 1-3 printed AprilTags (from [Current Season] field)
 - [ ] Fully charged battery (> 12V)
 - [ ] Clear space: 3m x 3m minimum
 
 ### Software
-- [ ] WPILib 2025 installed on driver station laptop
+- [ ] WPILib [Current Year] installed on driver station laptop
 - [ ] PhotonVision running on Raspberry Pi
 - [ ] Robot code deployed to robot
 - [ ] Shuffleboard or Glass dashboard ready
@@ -389,7 +389,7 @@ Shuffleboard → Vision Tab
 
 ```
 Shuffleboard → Drive Tab
-- Field widget shows blue robot on 2025 Reefscape field
+- Field widget shows blue robot on [Current Season] field
 - Robot position should update as you drive
 ```
 
@@ -1027,5 +1027,5 @@ D-PAD:
 ---
 
 **Last Updated:** 2026-01-18
-**Season:** 2025 Reefscape
-**Authors:** FRC Team 5684 Titans of Tech Programming Mentors
+**Season:** [Current Season]
+**Authors:** FRC Template Contributors Programming Mentors

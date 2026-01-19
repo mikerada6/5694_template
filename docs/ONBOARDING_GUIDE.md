@@ -153,7 +153,7 @@ Welcome! If you've programmed FRC before, here's your fast-track guide.
 
 ### 5-Minute Orientation
 
-**Architecture:** Command-based, WPILib 2025
+**Architecture:** Command-based, WPILib [Current Year]
 
 **Key Features:**
 - ✅ MAXSwerve drivetrain (REV Robotics)
@@ -228,9 +228,9 @@ Welcome! If you've programmed FRC before, here's your fast-track guide.
 
 #### Task 3: Create Game-Specific Features (Week 3-4)
 
-**Examples for 2025 Reefscape:**
-- Algae intake subsystem
-- Coral shooter subsystem
+**Examples for [Current Season]:**
+- Game piece intake subsystem
+- Scoring mechanism subsystem
 - Climber subsystem
 - Auto routines for scoring
 
@@ -240,8 +240,8 @@ src/main/java/frc/robot/
 ├── subsystems/
 │   ├── DriveSubsystem.java       ← Reusable (don't touch)
 │   ├── VisionSubsystem.java      ← Reusable (don't touch)
-│   ├── AlgaeIntakeSubsystem.java ← Game-specific (create new)
-│   └── CoralShooterSubsystem.java ← Game-specific (create new)
+│   ├── IntakeSubsystem.java ← Game-specific (create new)
+│   └── ScorerSubsystem.java ← Game-specific (create new)
 │
 └── commands/
     ├── DriveCommands.java         ← Reusable (don't touch)
@@ -279,7 +279,7 @@ src/main/java/frc/robot/
 
 **Workflow:**
 1. Install PathPlanner GUI
-2. Load 2025 Reefscape field
+2. Load [Current Season] field
 3. Draw paths
 4. Export to `deploy/pathplanner/paths/`
 5. Create auto in `RobotContainer.createAuto()`
@@ -427,5 +427,5 @@ After 2 weeks, you should be able to:
 **📚 [Back to Documentation Index](README.md)**
 
 **Last Updated:** 2026-01-16
-**Game:** 2025 Reefscape
+**Game:** [Current Season]
 **Team:** [Your Team Number]

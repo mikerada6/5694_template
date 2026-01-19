@@ -369,7 +369,7 @@ public class RobotContainer {
    * <p><b>How to create these paths in PathPlanner:</b>
    * <ol>
    *   <li>Install PathPlanner: https://pathplanner.dev/home.html
-   *   <li>Open PathPlanner, select "2025 Reefscape" field
+   *   <li>Open PathPlanner, select current season field layout
    *   <li>Create "Test Drive Forward": Start (1, 4), End (3, 4), straight line
    *   <li>Create "Test L-Shape": Start (1, 4), waypoint (3, 4), End (3, 6), 90° turn
    *   <li>Set constraints: Max Vel 2.0 m/s, Max Accel 1.5 m/s² (SAFE for testing!)
@@ -403,8 +403,9 @@ public class RobotContainer {
     // 🏆 GAME AUTOS - Add your competition autonomous routines here
     // ═════════════════════════════════════════════════════════════════════
 
-    // Example for 2025 Reefscape (update each year):
-    // auto.addOption("4 Piece Auto", new PathPlannerAuto("4 Piece Auto"));
+    // TODO: Create autonomous routines for current game (update each year)
+    // Examples:
+    // auto.addOption("3 Piece Auto", new PathPlannerAuto("3 Piece Auto"));
     // auto.addOption("2 Piece Auto", new PathPlannerAuto("2 Piece Auto"));
     // auto.addOption("Leave Only", new PathPlannerAuto("Leave Only"));
 
@@ -769,14 +770,19 @@ public class RobotContainer {
   /**
    * Loads AprilTag field layout for current game.
    *
-   * <p><b>⚠️ UPDATE EACH YEAR:</b> Change {@code k2025Reefscape} to new game year.
+   * <p><b>⚠️ UPDATE EACH YEAR:</b> Replace with current season's field layout.
+   * <p>Available fields are defined in {@code AprilTagFields} enum.
+   * <p>Examples: k2024Crescendo, k2023ChargedUp, k2025Reefscape, etc.
    *
    * @return Field layout or null if unavailable
    */
   private static AprilTagFieldLayout loadFieldLayout() {
     try {
-      return AprilTagFieldLayout.loadField(AprilTagFields.k2025Reefscape);
-      // For future years: AprilTagFieldLayout.loadField(AprilTagFields.k2026GameName);
+      // TODO: Update to current season field layout
+      // Example: return AprilTagFieldLayout.loadField(AprilTagFields.k[YEAR][GameName]);
+      throw new UnsupportedOperationException(
+        "Field layout not configured! Update RobotContainer.loadFieldLayout() with current season field."
+      );
     } catch (Exception e) {
       DriverStation.reportWarning(
         "Could not load AprilTag field layout: " + e.getMessage() +
@@ -876,12 +882,12 @@ public class RobotContainer {
     // ═══════════════════════════════════════════════════════════════════════
     // 🏆 GAME-SPECIFIC NAMED COMMANDS
     // ═══════════════════════════════════════════════════════════════════════
-    // Add your game-specific commands here for use in autonomous:
+    // TODO: Register game-specific commands for use in PathPlanner autonomous
     //
-    // Example for 2025 Reefscape:
-    // NamedCommands.registerCommand("Intake Algae", intakeSubsystem.runIntake());
-    // NamedCommands.registerCommand("Score Coral", shooterSubsystem.shoot());
-    // NamedCommands.registerCommand("Deploy Climber", climberSubsystem.deploy());
+    // Examples (update for current game):
+    // NamedCommands.registerCommand("Intake Game Piece", intakeSubsystem.runIntake());
+    // NamedCommands.registerCommand("Score Game Piece", scorerSubsystem.score());
+    // NamedCommands.registerCommand("Deploy Mechanism", deploySubsystem.deploy());
   }
 }
 

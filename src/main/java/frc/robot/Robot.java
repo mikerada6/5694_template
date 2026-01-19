@@ -35,9 +35,10 @@ public class Robot extends LoggedRobot {
     // ═══════════════════════════════════════════════════════════════════════
 
     // Record metadata
-    Logger.recordMetadata("ProjectName", "FRC5684-2025");
-    Logger.recordMetadata("Team", "5684 Titans of Tech");
-    Logger.recordMetadata("Game", "2025 Reefscape");
+    // TODO: Update these values when cloning template for new season
+    Logger.recordMetadata("ProjectName", "FRC-Swerve-Template");
+    Logger.recordMetadata("Team", "[Team XXXX] [Team Name]");
+    Logger.recordMetadata("Game", "[Current Season Game]");
     Logger.recordMetadata("RobotType", "Swerve Drive");
 
     if (isReal()) {

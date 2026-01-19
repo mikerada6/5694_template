@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an **FRC (FIRST Robotics Competition) robot codebase** for the 2025 Reefscape game, built on WPILib with Java. The architecture uses a **command-based framework** with swerve drive, vision-based pose estimation, and PathPlanner autonomous.
+This is an **FRC (FIRST Robotics Competition) robot codebase template**, built on WPILib with Java. The architecture uses a **command-based framework** with swerve drive, vision-based pose estimation, and PathPlanner autonomous. This is a **year-to-year reusable template** that teams customize for each season.
 
 **Key Design Philosophy:**
 - **Year-to-year reusable core**: `DriveSubsystem`, `VisionSubsystem`, and `DriveCommands` should NOT change between seasons

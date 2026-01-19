@@ -171,5 +171,5 @@ myTab.addNumber("My Value", () -> subsystem.getValue())
 ---
 
 **Last Updated:** 2026-01-16
-**Game:** 2025 Reefscape
+**Game:** [Current Season]
 **Team:** 5684

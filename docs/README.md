@@ -170,5 +170,5 @@ Week 3-4: Autonomous Paths + Game Features
 ---
 
 **Last Updated:** 2026-01-18
-**Game:** 2025 Reefscape (update each year!)
-**Team:** FRC Team 5684 Titans of Tech
+**Game:** [Current Season] (update each year!)
+**Team:** FRC Template Contributors

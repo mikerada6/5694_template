@@ -182,7 +182,7 @@ kHeadingLockI = 0.0 (usually)
 **Checklist:**
 - [ ] Camera mounted on robot
 - [ ] USB connected to roboRIO
-- [ ] PhotonVision installed on coprocessor
+- [ ] PhotonVision installed on cosecondary scoring location
 - [ ] Camera calibrated in PhotonVision
 - [ ] AprilTag pipeline configured
 - [ ] Camera position measured (X, Y, Z offsets from robot center)
@@ -237,7 +237,7 @@ kHeadingLockI = 0.0 (usually)
 
 **If Vision Tests Fail:**
 - Check camera Transform3d in RobotContainer
-- Verify field layout loaded (k2025Reefscape)
+- Verify field layout loaded (k[YEAR][GameName])
 - Check lighting on AprilTag
 - Ensure tag is 1-4m away (optimal range)
 
@@ -256,7 +256,7 @@ kHeadingLockI = 0.0 (usually)
 
 **Setup:**
 1. Install PathPlanner software
-2. Load 2025 Reefscape field layout
+2. Load [Current Season] field layout
 3. Create simple test paths:
    - Straight line (2m forward)
    - L-shape turn
@@ -292,9 +292,9 @@ kHeadingLockI = 0.0 (usually)
 3. Bind to co-driver buttons
 4. Test individually before combining
 
-**Example (2025 Reefscape):**
-- Algae intake subsystem
-- Coral shooter subsystem
+**Example ([Current Season]):**
+- Game piece intake subsystem
+- Scoring mechanism subsystem
 - Climber subsystem
 
 ---
@@ -521,5 +521,5 @@ No idea which part is broken.
 **📚 [Back to Documentation Index](README.md)**
 
 **Last Updated:** 2026-01-16
-**Game:** 2025 Reefscape (update each year!)
+**Game:** [Current Season] (update each year!)
 **Team:** [Your Team Number]

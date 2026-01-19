@@ -206,7 +206,7 @@ public static final PIDConstants kRotationPID = new PIDConstants(5.0, 0.0, 0.0);
 
 1. Download from https://pathplanner.dev/home.html
 2. Open PathPlanner application
-3. Select "2025 Reefscape" field layout
+3. Select "[Current Season]" field layout
 
 ### Step 2: Create a Path
 
@@ -341,5 +341,5 @@ auto.addOption("4 Piece Auto", new PathPlannerAuto("4 Piece Auto"));
 **📚 [Back to Documentation Index](README.md)**
 
 **Last Updated:** 2026-01-16
-**Game:** 2025 Reefscape
+**Game:** [Current Season]
 **Team:** [Your Team Number]

@@ -64,7 +64,7 @@
 - [ ] All guide footers: "Game: 2026 GameName"
 - [ ] All guide footers: "Last Updated: YYYY-MM-DD"
 - [ ] Constants.FieldConstants (replace completely!)
-- [ ] AprilTag field layout (e.g., k2025Reefscape → k2026GameName)
+- [ ] AprilTag field layout (e.g., k[YEAR][GameName] → k2026GameName)
 
 ### Update Robot-Specific Values
 - [ ] DriveConstants.kTrackWidth (measure new robot)
@@ -85,8 +85,8 @@
 - [ ] AutoConstants.kRotationPID = (5.0, 0.0, 0.0) (re-tune)
 
 ### Remove Old Game Code
-- [ ] Delete old game-specific subsystems (e.g., AlgaeIntakeSubsystem)
-- [ ] Delete old game-specific commands folder (e.g., commands/reefscape/)
+- [ ] Delete old game-specific subsystems (e.g., IntakeSubsystem)
+- [ ] Delete old game-specific commands folder (e.g., commands/[gamename]/)
 - [ ] Clean up RobotContainer button bindings
 - [ ] Remove old autonomous routines
 

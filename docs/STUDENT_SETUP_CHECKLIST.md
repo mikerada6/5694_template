@@ -15,14 +15,14 @@
   - Verify: Run `java -version` in terminal (should show "17.x.x")
   - ⚠️ **Not Java 21 or 25!** FRC requires Java 17
 
-- [ ] **WPILib 2025** installed
+- [ ] **WPILib [Current Year]** installed
   - Download from: https://github.com/wpilibsuite/allwpilib/releases
   - Includes VS Code with FRC extensions
 
 - [ ] **Git** installed
   - Verify: Run `git --version` in terminal
 
-- [ ] **PhotonVision** installed on coprocessor
+- [ ] **PhotonVision** installed on cosecondary scoring location
   - Download from: https://photonvision.org/
   - Access UI at: http://photonvision.local:5800
 
@@ -142,7 +142,7 @@ Open: `src/main/java/frc/robot/RobotContainer.java` (around line 427)
 
 - [ ] **Verify field layout** loads correctly:
   ```java
-  return AprilTagFields.k2025Reefscape.loadAprilTagLayoutField();
+  return AprilTagFields.k[YEAR][GameName].loadAprilTagLayoutField();
   ```
 
 - [ ] **Check console output** when code deploys:
@@ -233,7 +233,7 @@ Open SmartDashboard or Shuffleboard:
 
 - [ ] **Check camera connection:**
   - Dashboard `Vision/photonvision/Connected` should be `true`
-  - If false: Check USB cable, coprocessor power, PhotonVision running
+  - If false: Check USB cable, cosecondary scoring location power, PhotonVision running
 
 - [ ] **Check AprilTag detection:**
   - Place robot ~2 meters from AprilTag
@@ -270,9 +270,9 @@ Once all items are checked, you're ready to proceed to:
 ### Vision Issues
 
 **Camera shows "Not Connected"**
-- Check USB cable from camera to coprocessor
+- Check USB cable from camera to cosecondary scoring location
 - Verify PhotonVision is running (http://photonvision.local:5800)
-- Check coprocessor power
+- Check cosecondary scoring location power
 
 **Vision sees tags but position is wrong**
 - Camera transform (X/Y/Z position) needs calibration
