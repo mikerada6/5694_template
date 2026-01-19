@@ -149,6 +149,13 @@ public class VisionSubsystem extends SubsystemBase implements VisionProvider {
         // Initialize vision kill switch (default = enabled)
         SmartDashboard.setDefaultBoolean("Vision/Enabled", true);
 
+        // ═════════════════════════════════════════════════════════════════════
+        // STARTUP LOGGING - Show vision status on console for easy debugging
+        // ═════════════════════════════════════════════════════════════════════
+        System.out.println("═══════════════════════════════════════════════════════");
+        System.out.println("     📷 VISION SUBSYSTEM INITIALIZATION");
+        System.out.println("═══════════════════════════════════════════════════════");
+
         // SAFETY CHECK: If no field layout provided, vision can't work
         // We report the error but DON'T crash - robot can still drive with encoders only
         if (m_fieldLayout == null) {
@@ -156,11 +163,20 @@ public class VisionSubsystem extends SubsystemBase implements VisionProvider {
                 "VisionSubsystem: Field Layout is null! Vision will be disabled.",
                 true
             );
+            System.out.println("❌ Field Layout: NOT LOADED");
+            System.out.println("   → Vision disabled - robot will use encoders only");
+            System.out.println("═══════════════════════════════════════════════════════");
             // Continue initialization so code structure remains valid
             // Update loop will safely bail out when called
+            return;
+        } else {
+            System.out.println("✅ Field Layout: LOADED");
+            System.out.println("   → " + m_fieldLayout.getTags().size() + " AprilTags configured");
         }
 
         // Initialize each camera
+        System.out.println("📷 Initializing cameras...");
+        int successCount = 0;
         for (CameraConfig config : configs) {
             try {
                 // Create camera connection
@@ -180,6 +196,13 @@ public class VisionSubsystem extends SubsystemBase implements VisionProvider {
                 }
 
                 m_cameras.add(camera);
+                successCount++;
+
+                System.out.println("   ✅ Camera '" + config.name + "' initialized");
+                System.out.println("      → Transform: " + String.format("(%.2f, %.2f, %.2f)m",
+                    config.robotToCamera.getTranslation().getX(),
+                    config.robotToCamera.getTranslation().getY(),
+                    config.robotToCamera.getTranslation().getZ()));
 
             } catch (Exception e) {
                 // Camera failed to initialize - report but continue
@@ -188,8 +211,22 @@ public class VisionSubsystem extends SubsystemBase implements VisionProvider {
                     "Vision: Failed to init camera " + config.name + ": " + e.getMessage(),
                     true
                 );
+                System.out.println("   ❌ Camera '" + config.name + "' FAILED: " + e.getMessage());
             }
         }
+
+        // Summary
+        System.out.println("───────────────────────────────────────────────────────");
+        if (successCount > 0) {
+            System.out.println("✅ Vision System Ready: " + successCount + "/" + configs.length + " cameras online");
+            System.out.println("   → Check connection: Vision/[camera]/Connected on dashboard");
+            System.out.println("   → PhotonVision UI: http://photonvision.local:5800");
+        } else {
+            System.out.println("⚠️  NO CAMERAS INITIALIZED - Vision disabled");
+            System.out.println("   → Check PhotonVision is running on coprocessor");
+            System.out.println("   → Verify camera names match: VisionConstants.java");
+        }
+        System.out.println("═══════════════════════════════════════════════════════");
     }
 
     // =========================================================================
