@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
@@ -19,7 +20,6 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.DriveConstants;
@@ -55,12 +55,12 @@ import frc.robot.constants.VisionConstants;
  *   3. DriveSubsystem requests poses via getEstimatedGlobalPoses(Pose2d)
  *   4. DriveSubsystem fuses vision data with wheel odometry for accurate positioning
  *
- * Dashboard Keys:
+ * Dashboard Keys (logged to AdvantageKit + SmartDashboard):
  *   - Vision/Enabled - Toggle vision system on/off
  *   - Vision/[CameraName]/Connected - Camera connection status
  *   - Vision/[CameraName]/TargetCount - How many tags camera sees
  *   - Vision/[CameraName]/LatencyMs - Camera processing delay
- *   - Field/VisionOnly - Field2d widget showing vision-only pose
+ *   - Vision/[CameraName]/EstimatedPose2d - Vision pose (view in AdvantageScope)
  *
  * Related files:
  *   - VisionProvider: Interface this implements
@@ -129,9 +129,6 @@ public class VisionSubsystem extends SubsystemBase implements VisionProvider {
     /** AprilTag field layout - defines where tags are on the field */
     private final AprilTagFieldLayout m_fieldLayout;
 
-    /** Field visualization widget - shows vision-detected pose on dashboard */
-    private final Field2d m_fieldVision = new Field2d();
-
     // =========================================================================
     // CONSTRUCTOR
     // =========================================================================
@@ -193,9 +190,6 @@ public class VisionSubsystem extends SubsystemBase implements VisionProvider {
                 );
             }
         }
-
-        // Add vision field widget to dashboard
-        SmartDashboard.putData("Field/VisionOnly", m_fieldVision);
     }
 
     // =========================================================================
@@ -464,10 +458,15 @@ public class VisionSubsystem extends SubsystemBase implements VisionProvider {
         String baseKey = "Vision/" + camera.getName();
 
         // Always log connection status
+        Logger.recordOutput(baseKey + "/Connected", connected);
         SmartDashboard.putBoolean(baseKey + "/Connected", connected);
 
         // If no pipeline result, camera is disconnected or no new data
         if (pipelineResult == null) {
+            Logger.recordOutput(baseKey + "/TargetCount", 0);
+            Logger.recordOutput(baseKey + "/TagIDs", "None");
+            Logger.recordOutput(baseKey + "/EstimatedPose", "N/A");
+            Logger.recordOutput(baseKey + "/AvgTagDistance", 0.0);
             SmartDashboard.putNumber(baseKey + "/TargetCount", 0);
             SmartDashboard.putString(baseKey + "/TagIDs", "None");
             SmartDashboard.putString(baseKey + "/EstimatedPose", "N/A");
@@ -477,14 +476,19 @@ public class VisionSubsystem extends SubsystemBase implements VisionProvider {
 
         // Log latency
         double latencyMs = pipelineResult.getLatencyMillis();
+        Logger.recordOutput(baseKey + "/LatencyMs", latencyMs);
         SmartDashboard.putNumber(baseKey + "/LatencyMs", latencyMs);
 
         // Get detected targets
         var targets = pipelineResult.getTargets();
+        Logger.recordOutput(baseKey + "/TargetCount", targets.size());
         SmartDashboard.putNumber(baseKey + "/TargetCount", targets.size());
 
         // Log individual tag IDs and build comma-separated list
         if (targets.isEmpty()) {
+            Logger.recordOutput(baseKey + "/TagIDs", "None");
+            Logger.recordOutput(baseKey + "/EstimatedPose", "N/A");
+            Logger.recordOutput(baseKey + "/AvgTagDistance", 0.0);
             SmartDashboard.putString(baseKey + "/TagIDs", "None");
             SmartDashboard.putString(baseKey + "/EstimatedPose", "N/A");
             SmartDashboard.putNumber(baseKey + "/AvgTagDistance", 0.0);
@@ -533,29 +537,43 @@ public class VisionSubsystem extends SubsystemBase implements VisionProvider {
                 }
             }
 
+            Logger.recordOutput(baseKey + "/TagIDs", tagInfo.toString());
             SmartDashboard.putString(baseKey + "/TagIDs", tagInfo.toString());
 
             // Log average distance
             if (validDistances > 0) {
                 double avgDistance = totalDistance / validDistances;
+                Logger.recordOutput(baseKey + "/AvgTagDistance", avgDistance);
                 SmartDashboard.putNumber(baseKey + "/AvgTagDistance", avgDistance);
             }
 
             // Log estimated pose if available
             if (estimatedPose != null) {
                 Pose2d pose = estimatedPose.estimatedPose.toPose2d();
+
+                // Log pose as Pose2d struct (AdvantageScope will display in 3D)
+                Logger.recordOutput(baseKey + "/EstimatedPose2d", pose);
+
+                // Also log human-readable string for Shuffleboard
                 String poseStr = String.format("(%.2f, %.2f, %.1f°)",
                     pose.getX(),
                     pose.getY(),
                     pose.getRotation().getDegrees()
                 );
+                Logger.recordOutput(baseKey + "/EstimatedPose", poseStr);
                 SmartDashboard.putString(baseKey + "/EstimatedPose", poseStr);
 
-                // Also log individual components for graphing
+                // Log individual components for AdvantageKit graphing
+                Logger.recordOutput(baseKey + "/PoseX", pose.getX());
+                Logger.recordOutput(baseKey + "/PoseY", pose.getY());
+                Logger.recordOutput(baseKey + "/PoseRotation", pose.getRotation().getDegrees());
+
+                // Keep SmartDashboard for Shuffleboard compatibility
                 SmartDashboard.putNumber(baseKey + "/PoseX", pose.getX());
                 SmartDashboard.putNumber(baseKey + "/PoseY", pose.getY());
                 SmartDashboard.putNumber(baseKey + "/PoseRotation", pose.getRotation().getDegrees());
             } else {
+                Logger.recordOutput(baseKey + "/EstimatedPose", "Rejected");
                 SmartDashboard.putString(baseKey + "/EstimatedPose", "Rejected");
             }
         }

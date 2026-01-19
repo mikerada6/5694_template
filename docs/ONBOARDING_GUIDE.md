@@ -84,7 +84,7 @@ Welcome! This guide will help you learn FRC programming step-by-step.
 
 **Follow these guides in order:**
 1. [**PID Tuning Guide**](PID_TUNING_GUIDE.md) - Learn how PID works by tuning it
-2. [**Vision Testing Guide**](VISION_TESTING_GUIDE.md) - Test vision commands
+2. [**Vision Guide Part 1**](VISION_GUIDE.md#part-1-quickstart-path) - Test vision commands
 3. Help veteran students with game-specific features
 
 **Learning Tips:**
@@ -213,7 +213,7 @@ Welcome! If you've programmed FRC before, here's your fast-track guide.
 
 #### Task 2: Verify Vision (Week 2-3)
 
-**Follow:** [VISION_TESTING_GUIDE.md](VISION_TESTING_GUIDE.md)
+**Follow:** [VISION_GUIDE.md Part 2](VISION_GUIDE.md#part-2-advanced-systematic-testing)
 
 **What to test:**
 1. Camera connection and AprilTag detection

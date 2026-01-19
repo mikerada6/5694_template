@@ -4,18 +4,25 @@
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.TimedRobot;
+import org.littletonrobotics.junction.LogFileUtil;
+import org.littletonrobotics.junction.LoggedRobot;
+import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.NT4Publisher;
+import org.littletonrobotics.junction.wpilog.WPILOGReader;
+import org.littletonrobotics.junction.wpilog.WPILOGWriter;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 /**
  * The methods in this class are called automatically corresponding to each mode, as described in
- * the TimedRobot documentation. If you change the name of this class or the package after creating
- * this project, you must also update the Main.java file in the project.
+ * the TimedRobot documentation.
+ *
+ * This robot uses AdvantageKit for structured logging and replay capability.
+ * All telemetry is logged via Logger.recordOutput() for AdvantageScope visualization.
  */
-public class Robot extends TimedRobot {
+public class Robot extends LoggedRobot {
   private Command m_autonomousCommand;
-
   private final RobotContainer m_robotContainer;
 
   /**
@@ -23,7 +30,47 @@ public class Robot extends TimedRobot {
    * initialization code.
    */
   public Robot() {
-    // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
+    // ═══════════════════════════════════════════════════════════════════════
+    // ADVANTAGEKIT LOGGER SETUP
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // Record metadata
+    Logger.recordMetadata("ProjectName", "FRC5684-2025");
+    Logger.recordMetadata("Team", "5684 Titans of Tech");
+    Logger.recordMetadata("Game", "2025 Reefscape");
+    Logger.recordMetadata("RobotType", "Swerve Drive");
+
+    if (isReal()) {
+      // ═════════════════════════════════════════════════════════════════════
+      // REAL ROBOT MODE - Log to USB stick and NetworkTables
+      // ═════════════════════════════════════════════════════════════════════
+      // Logs saved to: /U/logs/ (USB stick)
+      // Also streams to AdvantageScope via NetworkTables for live viewing
+      Logger.addDataReceiver(new WPILOGWriter()); // Log to USB
+      Logger.addDataReceiver(new NT4Publisher()); // Stream to NetworkTables
+
+    } else {
+      // ═════════════════════════════════════════════════════════════════════
+      // SIMULATION/REPLAY MODE
+      // ═════════════════════════════════════════════════════════════════════
+      setUseTiming(false); // Run as fast as possible in simulation
+
+      // Check if replaying a log file
+      String logPath = LogFileUtil.findReplayLog();
+      if (logPath != null) {
+        // Replay mode - read from existing log
+        Logger.setReplaySource(new WPILOGReader(logPath));
+        Logger.addDataReceiver(new WPILOGWriter(LogFileUtil.addPathSuffix(logPath, "_sim")));
+      } else {
+        // Simulation mode - log new data
+        Logger.addDataReceiver(new NT4Publisher());
+      }
+    }
+
+    // Start logging! Must be called after adding receivers
+    Logger.start();
+
+    // Instantiate our RobotContainer. This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
   }

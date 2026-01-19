@@ -210,7 +210,7 @@ kHeadingLockI = 0.0 (usually)
 - ✅ Vision hardware connected
 - ✅ AprilTag mounted on wall
 
-**Follow:** [Vision Testing Guide](VISION_TESTING_GUIDE.md)
+**Follow:** [Vision Guide](VISION_GUIDE.md) (Part 1 for beginners, Part 2 for advanced)
 
 **Testing Order:**
 1. **Vision Reset** (30 min)
@@ -455,7 +455,7 @@ No idea which part is broken.
 ## 📚 Guide Quick Links
 
 - **PID Tuning:** [PID Tuning Guide](PID_TUNING_GUIDE.md) (Week 1-2)
-- **Vision Testing:** [Vision Testing Guide](VISION_TESTING_GUIDE.md) (Week 2-3)
+- **Vision Testing:** [Vision Guide](VISION_GUIDE.md) (Week 2-3, Parts 1 & 2)
 - **Code Documentation:** See comments in DriveSubsystem.java, DriveCommands.java
 
 ---

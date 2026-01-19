@@ -69,11 +69,47 @@ public final class DriveConstants {
   /** Vision timeout (seconds). Warn if no AprilTags detected for this long. */
   public static final double kVisionTimeoutSeconds = 2.0;
 
-  /** Large vision correction threshold (meters). Trust vision highly when correction > this. */
-  public static final double kVisionLargeCorrectionThreshold = 0.5;
+  // ═══════════════════════════════════════════════════════════════════════
+  // VISION CORRECTION THRESHOLDS - Competition Mode vs Classroom Mode
+  // ═══════════════════════════════════════════════════════════════════════
 
-  /** Small vision correction threshold (meters). Accept vision when correction < this. */
-  public static final double kVisionSmallCorrectionThreshold = 1.0;
+  /**
+   * COMPETITION MODE: Large vision correction threshold (meters).
+   * Trust vision highly when correction > this (multi-tag detections).
+   */
+  public static final double kVisionLargeCorrectionThreshold_Competition = 0.5;
+
+  /**
+   * COMPETITION MODE: Small vision correction threshold (meters).
+   * Accept single-tag vision when correction < this.
+   * CRITICAL: This is the main safety filter to prevent "teleporting"!
+   */
+  public static final double kVisionSmallCorrectionThreshold_Competition = 1.0;
+
+  /**
+   * CLASSROOM MODE: Large vision correction threshold (meters).
+   * More permissive for testing with single AprilTag in small space.
+   */
+  public static final double kVisionLargeCorrectionThreshold_Classroom = 2.0;
+
+  /**
+   * CLASSROOM MODE: Small vision correction threshold (meters).
+   * Relaxed to allow testing when robot is placed far from expected position.
+   * ⚠️ WARNING: This allows large jumps - only use during controlled testing!
+   */
+  public static final double kVisionSmallCorrectionThreshold_Classroom = 5.0;
+
+  /**
+   * @deprecated Use kVisionLargeCorrectionThreshold_Competition or _Classroom instead
+   */
+  @Deprecated
+  public static final double kVisionLargeCorrectionThreshold = kVisionLargeCorrectionThreshold_Competition;
+
+  /**
+   * @deprecated Use kVisionSmallCorrectionThreshold_Competition or _Classroom instead
+   */
+  @Deprecated
+  public static final double kVisionSmallCorrectionThreshold = kVisionSmallCorrectionThreshold_Competition;
 
   /** High-trust vision std dev - X/Y (meters). Used when making large corrections. */
   public static final double kVisionHighTrustStdDevXY = 0.1;

@@ -14,9 +14,22 @@ Separate paths for freshmen vs veterans:
 - 🆕 **Freshmen:** Learn FRC programming step-by-step
 - 🎓 **Veterans:** Fast-track orientation for experienced students
 
+### 🏫 First Time Testing Vision?
+
+**⭐ NEW! Read this first:** [**Vision System Complete Guide**](VISION_GUIDE.md)
+
+Comprehensive guide with beginner quickstart AND advanced testing:
+- ✅ **Part 1:** Step-by-step 8-part testing workflow (1-2 hours)
+- ✅ **Part 2:** Advanced systematic testing procedures (2-3 days)
+- ✅ Complete controller button reference
+- ✅ Classroom Mode vs Competition Mode
+- ✅ Troubleshooting and tuning
+
+**Perfect for:** All skill levels - beginners start with Part 1, advanced users use Part 2
+
 ### 🔧 Ready to Work on the Robot?
 
-**Read this first:** [**Student Setup Checklist**](STUDENT_SETUP_CHECKLIST.md) - NEW!
+**Read this first:** [**Student Setup Checklist**](STUDENT_SETUP_CHECKLIST.md)
 
 Complete this checklist BEFORE starting testing:
 - ✅ Required software installation
@@ -38,10 +51,16 @@ Complete roadmap from hardware assembly to competition-ready robot:
 
 ### 👥 Student Resources
 
-**[Student Onboarding Guide](ONBOARDING_GUIDE.md)** - NEW!
+**[Student Onboarding Guide](ONBOARDING_GUIDE.md)**
 - For freshmen: Learn FRC programming
 - For veterans: Fast-track orientation
 - Learning paths, common questions, mentoring tips
+
+**[Vision System Complete Guide](VISION_GUIDE.md)** - ⭐ UPDATED!
+- Part 1: Quickstart for beginners (8-step workflow)
+- Part 2: Advanced systematic testing and tuning
+- Complete controller button reference
+- Classroom Mode vs Competition Mode explained
 
 ---
 
@@ -61,15 +80,15 @@ Tune rotation PID controllers for smooth motion.
 
 ---
 
-### 2️⃣ [Vision Testing Guide](VISION_TESTING_GUIDE.md)
+### 2️⃣ [Vision System Complete Guide](VISION_GUIDE.md)
 **Do this SECOND!** (Week 2-3)
 
 Test vision-based autonomous commands safely.
-- ⏱️ 2-3 days of work
-- 🎯 Requires PID tuning to be complete
+- ⏱️ Part 1: 1-2 hours (quickstart) / Part 2: 2-3 days (advanced)
+- 🎯 Requires PID tuning to be complete (for advanced testing)
 - ✅ Must complete before autonomous paths
 
-**When to use:** After PID tuning is complete
+**When to use:** After PID tuning is complete (or use Part 1 quickstart first)
 
 ---
 
@@ -104,6 +123,9 @@ Week 3-4: Autonomous Paths + Game Features
 **"I'm a new student, where do I start?"**
 → Read [Student Onboarding Guide](ONBOARDING_GUIDE.md)
 
+**"First time testing vision in classroom with AprilTags?"**
+→ Read [Vision Guide Part 1: Quickstart](VISION_GUIDE.md#part-1-quickstart-path) ⭐ UPDATED!
+
 **"I'm ready to work on the robot, where do I start?"**
 → Read [Start of Season Guide](START_OF_SEASON_GUIDE.md)
 
@@ -111,10 +133,13 @@ Week 3-4: Autonomous Paths + Game Features
 → Do [PID Tuning Guide](PID_TUNING_GUIDE.md)
 
 **"We want to test vision"**
-→ First complete [PID Tuning Guide](PID_TUNING_GUIDE.md), then [Vision Testing Guide](VISION_TESTING_GUIDE.md)
+→ Try [Vision Guide Part 1](VISION_GUIDE.md#part-1-quickstart-path) for beginners, or [Part 2](VISION_GUIDE.md#part-2-advanced-systematic-testing) for detailed procedures
 
 **"Vision commands oscillate and fail"**
 → Go back to [PID Tuning Guide](PID_TUNING_GUIDE.md) (you skipped it!)
+
+**"Vision is being rejected in classroom"**
+→ Enable Classroom Mode! See [Vision Guide - Step 5](VISION_GUIDE.md#step-5-test-auto-rotate-circle-button)
 
 **"Competition is next week!"**
 → See pre-competition checklist in [Start of Season Guide](START_OF_SEASON_GUIDE.md)
@@ -127,9 +152,9 @@ Week 3-4: Autonomous Paths + Game Features
 |-------|---------|------|---------------|
 | [Student Setup Checklist](STUDENT_SETUP_CHECKLIST.md) | Verify robot configuration | 1-2 hours | None |
 | [Student Onboarding](ONBOARDING_GUIDE.md) | Learn the codebase | 1-4 weeks | None |
+| [Vision Guide](VISION_GUIDE.md) ⭐ | Complete vision testing (Parts 1 & 2) | 1-2 hrs to 2-3 days | Basic driving works |
 | [Start of Season](START_OF_SEASON_GUIDE.md) | Master roadmap | Read once | None |
 | [PID Tuning](PID_TUNING_GUIDE.md) | Tune controllers | 3-5 days | Setup checklist complete |
-| [Vision Testing](VISION_TESTING_GUIDE.md) | Test vision commands | 2-3 days | PID tuning complete |
 | [Auto Testing](AUTO_TESTING_GUIDE.md) | Test autonomous paths | 1-2 days | PID + Vision complete |
 
 ---
@@ -144,6 +169,6 @@ Week 3-4: Autonomous Paths + Game Features
 
 ---
 
-**Last Updated:** 2026-01-16
+**Last Updated:** 2026-01-18
 **Game:** 2025 Reefscape (update each year!)
-**Team:** [Your Team Number]
+**Team:** FRC Team 5684 Titans of Tech

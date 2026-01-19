@@ -156,6 +156,13 @@ public class RobotContainer {
     SmartDashboard.putNumber("Test/TargetY", testTarget.getY());
     SmartDashboard.putNumber("Test/TargetHeading", testTarget.getRotation().getDegrees());
     SmartDashboard.putNumber("Test/DistanceFromTag", DriveConstants.kDefaultDistanceFromTag);
+
+    // ═════════════════════════════════════════════════════════════════════
+    // INITIALIZE VISION MODE - Defaults to Competition Mode (safest)
+    // ═════════════════════════════════════════════════════════════════════
+    // Set to false = Competition Mode (strict 1m threshold)
+    // Set to true = Classroom Mode (relaxed 5m threshold)
+    SmartDashboard.setDefaultBoolean("Vision/ClassroomMode", false);
   }
 
   // =========================================================================
@@ -165,10 +172,35 @@ public class RobotContainer {
   /**
    * Configures button->command mappings.
    *
-   * 🧪 VISION TESTING: See VISION_TESTING_GUIDE.md for complete button reference and testing procedures.
+   * 🧪 BEGINNER-FRIENDLY LAYOUT: Optimized for safe testing by inexperienced students
    *
-   * Driver Controls (Thrustmaster): Joystick driving + field-relative toggle + emergency override
-   * Co-Driver Controls (PlayStation): Vision testing (Y/A/X), utilities (B/LB/RB), speed (D-Pad)
+   * DRIVER CONTROLS (Thrustmaster Joysticks):
+   *   - Left stick: Translation (forward/back, left/right)
+   *   - Right stick X: Rotation
+   *   - Right stick Button 1: Toggle speed (full/half)
+   *   - Right stick Button 2: Zero heading
+   *   - Right stick Button 3: 🚨 Emergency override
+   *   - Left stick Button 1: Toggle field-relative
+   *
+   * CO-DRIVER CONTROLS (PlayStation):
+   *   FACE BUTTONS (Vision Testing):
+   *     △ Triangle: Heading lock test
+   *     ○ Circle: Auto-aim test
+   *     ✕ Cross: Drive to distance test
+   *     □ Square: X-stance (safety lock)
+   *
+   *   BUMPERS (Speed Control - Toggle):
+   *     L1: Switch to SLOW mode (safe for practice)
+   *     R1: Switch to FAST mode (when confident)
+   *
+   *   TRIGGERS (Rotation Snap - Hold):
+   *     L2: Snap to cardinal angles (0°/90°/180°/270°)
+   *     R2: Snap to diamond angles (45°/135°/225°/315°)
+   *
+   *   UTILITIES:
+   *     Touchpad: Force vision reset
+   *     Options: Reload test target from dashboard
+   *     D-Pad: Reserved for future use
    *
    * ⚠️ Safety: Vision commands are autonomous (whileTrue). Driver button 3 = emergency override.
    */
@@ -242,27 +274,43 @@ public class RobotContainer {
             )));
 
     // ═════════════════════════════════════════════════════════════════════
-    // CO-DRIVER DRIVE UTILITIES
+    // CO-DRIVER SPEED CONTROL (Bumpers - Toggle mode for beginners)
     // ═════════════════════════════════════════════════════════════════════
 
-    // L1 button: Snap to cardinal angle (0/90/180/270°)
+    // L1 button: Switch to SLOW mode (safe for practice)
     coDriver.L1()
+        .onTrue(DriveCommands.setSpeed(m_robotDrive, DriveConstants.kHalfSpeedMultiplier));
+
+    // R1 button: Switch to FAST mode (when confident)
+    coDriver.R1()
+        .onTrue(DriveCommands.setSpeed(m_robotDrive, DriveConstants.kFullSpeedMultiplier));
+
+    // ═════════════════════════════════════════════════════════════════════
+    // CO-DRIVER ROTATION SNAP (Triggers - Hold to activate)
+    // ═════════════════════════════════════════════════════════════════════
+
+    // L2 trigger: Snap to cardinal angle (0/90/180/270°)
+    coDriver.L2()
         .whileTrue(DriveCommands.snapToClosestCardinal(
             m_robotDrive,
             () -> -driverLeftStick.getY(),
             () -> -driverLeftStick.getX()
         ));
 
-    // R1 button: Snap to diamond angle (45/135/225/315°)
-    coDriver.R1()
+    // R2 trigger: Snap to diamond angle (45/135/225/315°)
+    coDriver.R2()
         .whileTrue(DriveCommands.snapToDiamond(
             m_robotDrive,
             () -> -driverLeftStick.getY(),
             () -> -driverLeftStick.getX()
         ));
 
-    // Create button: Force vision reset (snap odometry to AprilTag)
-    coDriver.create()
+    // ═════════════════════════════════════════════════════════════════════
+    // CO-DRIVER UTILITIES
+    // ═════════════════════════════════════════════════════════════════════
+
+    // Touchpad button: Force vision reset (snap odometry to AprilTag)
+    coDriver.touchpad()
         .onTrue(DriveCommands.forceVisionReset(m_robotDrive));
 
     // Options button: Reload test target from dashboard
@@ -288,13 +336,10 @@ public class RobotContainer {
         }.ignoringDisable(true));
 
     // ═════════════════════════════════════════════════════════════════════
-    // CO-DRIVER SPEED CONTROL (D-Pad)
+    // D-PAD RESERVED FOR FUTURE USE
     // ═════════════════════════════════════════════════════════════════════
-
-    coDriver.povUp().onTrue(DriveCommands.setSpeed(m_robotDrive, DriveConstants.kFullSpeedMultiplier));
-    coDriver.povRight().onTrue(DriveCommands.setSpeed(m_robotDrive, DriveConstants.kThreeQuarterSpeedMultiplier));
-    coDriver.povDown().onTrue(DriveCommands.setSpeed(m_robotDrive, DriveConstants.kHalfSpeedMultiplier));
-    coDriver.povLeft().onTrue(DriveCommands.setSpeed(m_robotDrive, DriveConstants.kQuarterSpeedMultiplier));
+    // Available for game-specific commands or preset speeds if needed
+    // Example: coDriver.povUp().onTrue(intakeCommand);
   }
 
   /**
@@ -427,9 +472,8 @@ public class RobotContainer {
     driveTab.addNumber("Gyro Rate (deg/s)", () -> m_robotDrive.getGyroRate())
         .withPosition(0, 2).withSize(3, 1);
 
-    // Field widget for pose visualization
-    driveTab.add("Field", m_robotDrive.getField())
-        .withPosition(6, 0).withSize(4, 3);
+    // NOTE: Field visualization now in AdvantageScope via logged Pose2d data
+    // See DriveSubsystem.updateDashboard() - logs "Drive/Pose" and "Drive/OdometryPose"
 
     // ═════════════════════════════════════════════════════════════════════
     // VISION TAB - Camera and AprilTag detection status
@@ -459,6 +503,20 @@ public class RobotContainer {
       if (totalTargets > 0) return "✅ TRACKING " + totalTargets + " TAG(S)";
       return "🔍 NO TARGETS";
     }).withPosition(2, 0).withSize(3, 1);
+
+    // Classroom Mode toggle - Switch between strict (competition) and relaxed (classroom) vision filtering
+    visionTab.addBoolean("Classroom Mode", () -> SmartDashboard.getBoolean("Vision/ClassroomMode", false))
+        .withPosition(5, 0).withSize(2, 1);
+
+    // Mode indicator - Shows current filtering mode and thresholds
+    visionTab.addString("Filter Mode", () -> {
+      boolean classroomMode = SmartDashboard.getBoolean("Vision/ClassroomMode", false);
+      if (classroomMode) {
+        return "🏫 CLASSROOM (5m)";
+      } else {
+        return "🏆 COMPETITION (1m)";
+      }
+    }).withPosition(7, 0).withSize(3, 1);
 
     // ─────────────────────────────────────────────────────────────────────
     // FRONT CAMERA SECTION (Left side)
@@ -663,9 +721,7 @@ public class RobotContainer {
     compTab.add("Auto Mode", auto)
         .withPosition(5, 0).withSize(2, 2);
 
-    // Compact field widget
-    compTab.add("Field", m_robotDrive.getField())
-        .withPosition(7, 0).withSize(3, 2);
+    // NOTE: Field visualization now in AdvantageScope via logged Pose2d data
   }
 
   // =========================================================================

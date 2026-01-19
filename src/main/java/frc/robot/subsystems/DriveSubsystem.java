@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import java.util.List;
 
+import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -20,7 +21,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.DriveConstants;
@@ -73,24 +74,28 @@ import frc.robot.constants.HardwareConstants;
  *   - Pure Odometry (Ghost): Backup, helps diagnose vision issues
  *   - If they drift apart on dashboard, vision might be miscalibrated!
  *
- * Dashboard Keys:
+ * Dashboard Keys (logged to AdvantageKit + SmartDashboard):
+ *   - Drive/Pose - Fused robot pose (vision + odometry) - Pose2d struct
+ *   - Drive/OdometryPose - Pure odometry pose (no vision) - Pose2d struct
+ *   - Drive/ModuleStates - All 4 swerve module states - SwerveModuleState[] array
+ *   - Drive/FieldRelative - Field-relative (true) or robot-relative (false)
  *   - Drive/SpeedMultiplier - Current speed percentage (0.0 to 1.0)
  *   - Drive/Heading - Robot rotation in degrees
- *   - Drive/PoseDrift - Distance between fused and pure odometry (meters)
- *   - Drive/LastVisionUpdate - Time since last AprilTag detected (seconds)
- *   - Drive/FL_Velocity, FR, RL, RR - Individual module speeds
- *   - Drive/X, Drive/Y - Robot position coordinates
- *   - Field/Fused - Field2d widget showing fused pose (green)
- *   - Field/PureOdometry - Field2d widget showing encoder-only pose (red)
+ *   - Drive/VelocityX/Y/Omega - Robot chassis velocities
  *   - Drive/BatteryVoltage - Current battery voltage
  *   - Drive/BrownoutRisk - Warning if voltage < 6.5V
  *
+ * AdvantageScope Features:
+ *   - 3D Field widget: Compare "Drive/Pose" vs "Drive/OdometryPose" to see drift
+ *   - Module state graphs: AdvantageScope auto-graphs "Drive/ModuleStates" array
+ *   - Post-match replay: Logs saved to /U/logs/ on robot (USB stick)
+ *
  * Pre-Match Checklist:
  *   1. Run zeroHeading() command facing away from driver station
- *   2. Verify Field/Fused widget shows robot in correct starting position
+ *   2. Verify AdvantageScope shows robot at correct starting position (Drive/Pose)
  *   3. Check all 4 module velocities respond to joystick
  *   4. Verify Vision/[Camera]/Connected is true
- *   5. Check Drive/PoseDrift stays small (< 0.5m)
+ *   5. Compare Drive/Pose vs Drive/OdometryPose in AdvantageScope (drift < 0.5m)
  *
  * Related files:
  *   - VisionProvider: Interface for vision integration
@@ -206,14 +211,8 @@ public class DriveSubsystem extends SubsystemBase {
     private final VisionProvider m_vision;
 
     // =========================================================================
-    // DASHBOARD VISUALIZATION & STATE
+    // ROBOT STATE
     // =========================================================================
-
-    /** Field widget showing fused estimate (encoders + gyro + vision) - The "truth" */
-    private final Field2d m_fieldFused = new Field2d();
-
-    /** Field widget showing pure odometry (encoders + gyro only) - The "ghost" */
-    private final Field2d m_fieldOdometry = new Field2d();
 
     /**
      * Speed multiplier - Scales all drive commands.
@@ -320,10 +319,6 @@ public class DriveSubsystem extends SubsystemBase {
 
         // Configure PathPlanner for autonomous path following
         configurePathPlanner();
-
-        // Add field visualization widgets to dashboard
-        SmartDashboard.putData("Field/Fused", m_fieldFused);
-        SmartDashboard.putData("Field/PureOdometry", m_fieldOdometry);
     }
 
     // =========================================================================
@@ -415,9 +410,7 @@ public class DriveSubsystem extends SubsystemBase {
             m_isBrownedOut = false;
         }
 
-        // Update dashboard every loop for live monitoring
-        SmartDashboard.putNumber("Drive/BatteryVoltage", voltage);
-        SmartDashboard.putBoolean("Drive/BrownoutRisk", m_isBrownedOut);
+        // NOTE: Battery voltage and brownout status are logged in updateDashboard()
     }
 
     // =========================================================================
@@ -425,53 +418,74 @@ public class DriveSubsystem extends SubsystemBase {
     // =========================================================================
 
     /**
-     * Updates SmartDashboard with comprehensive diagnostics.
+     * Updates AdvantageKit logs and Shuffleboard with robot state and diagnostics.
      *
-     * <p><b>What gets displayed:</b>
+     * <p><b>AdvantageKit Structured Logging:</b>
      * <ul>
-     *   <li><b>Field widgets:</b> Visual robot position (fused vs odometry)
-     *   <li><b>Pose data:</b> X, Y coordinates and heading
-     *   <li><b>Pose drift:</b> How far fused and pure odometry disagree
-     *   <li><b>Module speeds:</b> All 4 swerve module velocities
+     *   <li><b>Pose2d structs:</b> Fused pose (vision-corrected) + Pure odometry pose
+     *       <ul><li>AdvantageScope automatically displays in 3D field widget</li>
+     *           <li>AdvantageScope can calculate pose drift automatically</li></ul>
+     *   <li><b>SwerveModuleState[] array:</b> All 4 module states (angle + velocity)
+     *       <ul><li>AdvantageScope automatically graphs velocities</li>
+     *           <li>Easier to spot broken modules than individual values</li></ul>
+     *   <li><b>Robot velocities:</b> Chassis speeds (vx, vy, omega)
+     *   <li><b>Battery voltage:</b> Monitor brownout risk
      * </ul>
      *
-     * <p><b>Key diagnostic: Drive/PoseDrift</b>
+     * <p><b>Shuffleboard Compatibility:</b>
      * <ul>
-     *   <li>< 0.3m = Good (vision and odometry agree)
-     *   <li>0.3-0.5m = Okay (some drift, acceptable)
-     *   <li>> 0.5m = Problem! (vision misconfigured or bad detections)
+     *   <li>Critical values still sent to SmartDashboard for Shuffleboard widgets
+     *   <li>Field-relative mode, speed multiplier, etc. needed for driver display
+     * </ul>
+     *
+     * <p><b>Key diagnostic: Compare "Drive/Pose" vs "Drive/OdometryPose" in AdvantageScope</b>
+     * <ul>
+     *   <li>< 0.3m drift = Good (vision and odometry agree)
+     *   <li>0.3-0.5m drift = Okay (some drift, acceptable)
+     *   <li>> 0.5m drift = Problem! (vision misconfigured or bad detections)
      * </ul>
      */
     private void updateDashboard() {
-        // Update field visualization widgets
-        m_fieldFused.setRobotPose(getCurrentPose());
-        m_fieldOdometry.setRobotPose(m_odometry.getPoseMeters());
+        // ═════════════════════════════════════════════════════════════════════
+        // ADVANTAGEKIT STRUCTURED LOGGING
+        // ═════════════════════════════════════════════════════════════════════
 
-        // Robot heading
-        SmartDashboard.putNumber("Drive/Heading", getHeading());
+        // Log poses as Pose2d structs (AdvantageScope will show in 3D field widget)
+        Logger.recordOutput("Drive/Pose", getCurrentPose());
+        Logger.recordOutput("Drive/OdometryPose", m_odometry.getPoseMeters());
+
+        // Log all module states as array (AdvantageScope will graph velocities)
+        SwerveModuleState[] moduleStates = new SwerveModuleState[] {
+            m_frontLeft.getState(),
+            m_frontRight.getState(),
+            m_rearLeft.getState(),
+            m_rearRight.getState()
+        };
+        Logger.recordOutput("Drive/ModuleStates", moduleStates);
+
+        // Log robot velocities
+        ChassisSpeeds speeds = getRobotRelativeSpeeds();
+        Logger.recordOutput("Drive/VelocityX", speeds.vxMetersPerSecond);
+        Logger.recordOutput("Drive/VelocityY", speeds.vyMetersPerSecond);
+        Logger.recordOutput("Drive/VelocityOmega", speeds.omegaRadiansPerSecond);
+
+        // Log battery voltage (brownout monitoring)
+        Logger.recordOutput("Drive/BatteryVoltage", RobotController.getBatteryVoltage());
+
+        // Log robot state
+        Logger.recordOutput("Drive/Heading", getHeading());
+        Logger.recordOutput("Drive/FieldRelative", m_fieldRelative);
+        Logger.recordOutput("Drive/SpeedMultiplier", m_speedMultiplier);
 
         // ═════════════════════════════════════════════════════════════════════
-        // POSE DRIFT DIAGNOSTIC - Very important!
+        // SHUFFLEBOARD COMPATIBILITY - Keep critical values for driver display
         // ═════════════════════════════════════════════════════════════════════
-        // Compares fused estimate (with vision) vs pure odometry (no vision)
-        // Large drift means vision corrections are pulling pose away from odometry
-        // Could indicate:
-        //   - Vision working correctly (fixing encoder drift)
-        //   - Vision misconfigured (bad camera Transform3d)
-        //   - Vision seeing wrong tags (reflections, other robots' bumpers)
-        double poseDifference = getCurrentPose().getTranslation()
-            .getDistance(m_odometry.getPoseMeters().getTranslation());
-        SmartDashboard.putNumber("Drive/PoseDrift", poseDifference);
 
-        // Individual module diagnostics (helps identify broken modules)
-        SmartDashboard.putNumber("Drive/FL_Velocity", m_frontLeft.getState().speedMetersPerSecond);
-        SmartDashboard.putNumber("Drive/FR_Velocity", m_frontRight.getState().speedMetersPerSecond);
-        SmartDashboard.putNumber("Drive/RL_Velocity", m_rearLeft.getState().speedMetersPerSecond);
-        SmartDashboard.putNumber("Drive/RR_Velocity", m_rearRight.getState().speedMetersPerSecond);
-
-        // Robot position coordinates
-        SmartDashboard.putNumber("Drive/X", getCurrentPose().getX());
-        SmartDashboard.putNumber("Drive/Y", getCurrentPose().getY());
+        // Driver needs to see these during match
+        SmartDashboard.putBoolean("Drive/FieldRelative", m_fieldRelative);
+        SmartDashboard.putNumber("Drive/SpeedMultiplier", m_speedMultiplier);
+        SmartDashboard.putNumber("Drive/BatteryVoltage", RobotController.getBatteryVoltage());
+        SmartDashboard.putBoolean("Drive/BrownoutRisk", m_isBrownedOut);
     }
 
     // =========================================================================
@@ -522,7 +536,9 @@ public class DriveSubsystem extends SubsystemBase {
         // Reject vision if spinning too fast (motion blur in camera)
         double angularSpeed = Math.abs(m_gyro.getRate());
         if (angularSpeed > DriveConstants.kMaxAngularVelocityForVisionDegPerSec) {
-            SmartDashboard.putString("Vision/Status", "Rejected: Spinning too fast");
+            String status = "Rejected: Spinning too fast";
+            Logger.recordOutput("Vision/Status", status);
+            SmartDashboard.putString("Vision/Status", status);
             return;  // Skip vision this frame, use encoders only
         }
 
@@ -542,9 +558,24 @@ public class DriveSubsystem extends SubsystemBase {
 
         double timeSinceLastVision = edu.wpi.first.wpilibj.Timer.getFPGATimestamp() - m_lastVisionUpdateTime;
         if (timeSinceLastVision > kVisionTimeoutSeconds && m_lastVisionUpdateTime > 0) {
-            SmartDashboard.putString("Vision/Status",
-                "Timeout - No targets for " + String.format("%.1f", timeSinceLastVision) + "s");
+            String status = "Timeout - No targets for " + String.format("%.1f", timeSinceLastVision) + "s";
+            Logger.recordOutput("Vision/Status", status);
+            SmartDashboard.putString("Vision/Status", status);
         }
+
+        // ═════════════════════════════════════════════════════════════════════
+        // SELECT VISION THRESHOLDS: Classroom Mode vs Competition Mode
+        // ═════════════════════════════════════════════════════════════════════
+        // Read mode from dashboard - defaults to Competition Mode (safest)
+        boolean classroomMode = SmartDashboard.getBoolean("Vision/ClassroomMode", false);
+
+        double largeCorrectionThreshold = classroomMode
+            ? DriveConstants.kVisionLargeCorrectionThreshold_Classroom
+            : DriveConstants.kVisionLargeCorrectionThreshold_Competition;
+
+        double smallCorrectionThreshold = classroomMode
+            ? DriveConstants.kVisionSmallCorrectionThreshold_Classroom
+            : DriveConstants.kVisionSmallCorrectionThreshold_Competition;
 
         // ═════════════════════════════════════════════════════════════════════
         // Process each vision estimate
@@ -573,7 +604,7 @@ public class DriveSubsystem extends SubsystemBase {
                 var stdDevs = m_vision.getEstimationStdDevs(est);
 
                 // If correction is large, trust vision EXTRA to snap back quickly
-                if (distanceDiff > DriveConstants.kVisionLargeCorrectionThreshold) {
+                if (distanceDiff > largeCorrectionThreshold) {
                     stdDevs = VecBuilder.fill(
                         DriveConstants.kVisionHighTrustStdDevXY,
                         DriveConstants.kVisionHighTrustStdDevXY,
@@ -582,9 +613,11 @@ public class DriveSubsystem extends SubsystemBase {
                 }
 
                 m_poseEstimator.addVisionMeasurement(estPose, est.timestampSeconds, stdDevs);
-                SmartDashboard.putString("Vision/Status", "Accepted: Multi-Tag");
+                String status = "Accepted: Multi-Tag" + (classroomMode ? " [CLASSROOM]" : "");
+                Logger.recordOutput("Vision/Status", status);
+                SmartDashboard.putString("Vision/Status", status);
 
-            } else if (distanceDiff < DriveConstants.kVisionSmallCorrectionThreshold) {
+            } else if (distanceDiff < smallCorrectionThreshold) {
                 // ═════════════════════════════════════════════════════════════
                 // CASE B: Single Tag, Small Correction (MEDIUM TRUST)
                 // ═════════════════════════════════════════════════════════════
@@ -593,21 +626,29 @@ public class DriveSubsystem extends SubsystemBase {
 
                 var stdDevs = m_vision.getEstimationStdDevs(est);
                 m_poseEstimator.addVisionMeasurement(estPose, est.timestampSeconds, stdDevs);
-                SmartDashboard.putString("Vision/Status", "Accepted: Single-Tag");
+                String status = "Accepted: Single-Tag" + (classroomMode ? " [CLASSROOM]" : "");
+                Logger.recordOutput("Vision/Status", status);
+                SmartDashboard.putString("Vision/Status", status);
 
             } else {
                 // ═════════════════════════════════════════════════════════════
                 // CASE C: Single Tag, Large Correction (REJECT!)
                 // ═════════════════════════════════════════════════════════════
-                // Single tag saying we're > 1m away from where we think we are
-                // This is suspicious! Could be:
+                // Single tag saying we're far from where we think we are
+                // In Competition Mode: Threshold is 1m (strict safety)
+                // In Classroom Mode: Threshold is 5m (relaxed for testing)
+                //
+                // If rejected, could be:
                 //   - Reflection (shiny surface looked like an AprilTag)
                 //   - Wrong tag (camera saw tag on different part of field)
                 //   - Noise (bad detection)
+                //   - Classroom testing: Robot placed far from expected position
                 //
-                // DON'T trust it - would "teleport" robot across field
-                SmartDashboard.putString("Vision/Status",
-                    "Rejected: Single Tag too far (" + String.format("%.2f", distanceDiff) + "m)");
+                // DON'T trust it - would "teleport" robot
+                String status = "Rejected: Single Tag too far (" + String.format("%.2f", distanceDiff) + "m > "
+                    + String.format("%.1f", smallCorrectionThreshold) + "m threshold)";
+                Logger.recordOutput("Vision/Status", status);
+                SmartDashboard.putString("Vision/Status", status);
             }
         }
     }
@@ -957,14 +998,9 @@ public class DriveSubsystem extends SubsystemBase {
         return m_fieldRelative;
     }
 
-    /**
-     * Gets the fused field widget for Shuffleboard visualization.
-     *
-     * @return Field2d object with fused pose (odometry + vision)
-     */
-    public Field2d getField() {
-        return m_fieldFused;
-    }
+    // NOTE: Field visualization now handled by AdvantageScope via logged Pose2d data
+    // See updateDashboard() - logs "Drive/Pose" and "Drive/OdometryPose"
+    // AdvantageScope will automatically display these on a 3D field widget
 
     /**
      * Gets the current gyro rotation rate for dashboard telemetry.

@@ -38,7 +38,7 @@
 - [x] **docs/ONBOARDING_GUIDE.md** - Student onboarding (freshmen + veterans)
 - [x] **docs/START_OF_SEASON_GUIDE.md** - Master workflow
 - [x] **docs/PID_TUNING_GUIDE.md** - PID tuning procedures
-- [x] **docs/VISION_TESTING_GUIDE.md** - Vision testing procedures
+- [x] **docs/VISION_GUIDE.md** - Vision testing procedures (quickstart + advanced)
 
 ### Cross-References
 - [x] All guides link to each other correctly
